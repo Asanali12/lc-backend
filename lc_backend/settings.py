@@ -101,6 +101,10 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+# Where `manage.py collectstatic` deposits files. Must be set even if you
+# don't actually serve /static/ — running collectstatic without it raises
+# ImproperlyConfigured.
+STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Local filesystem layout for stored blobs. Always populated; the storage
