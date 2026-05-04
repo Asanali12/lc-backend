@@ -21,6 +21,17 @@ def events_key(page_id: str) -> str:
     return f"{_prefix()}{page_id}/events.json"
 
 
+def state_key(page_id: str) -> str:
+    """Editor doc-tree blob — lets the editor reopen a saved page losslessly.
+    Optional: pages saved before this blob existed have no state.json and
+    the raw_state view returns 404 for them."""
+    return f"{_prefix()}{page_id}/state.json"
+
+
+def blob_exists(key: str) -> bool:
+    return default_storage.exists(key)
+
+
 def write_blob(key: str, body: str) -> int:
     """Write a string blob to storage. Overwrites if the key exists."""
     if default_storage.exists(key):
