@@ -30,6 +30,7 @@ from .storage import (
     delete_blob,
     events_key,
     html_key,
+    presets_key,
     read_blob,
     state_key,
     write_blob,
@@ -259,3 +260,49 @@ def raw_state(_request: HttpRequest, id_or_slug: str) -> HttpResponse:
         )
     body = read_blob(key)
     return HttpResponse(body, content_type="application/json; charset=utf-8")
+
+
+# ─── global event presets library ──────────────────────────────────────
+# Single blob shared across every page and every editor user. PUT replaces
+# the whole array (atomic, last-write-wins). GET is open; PUT requires the
+# write token. There is no per-preset endpoint — clients send the full
+# array on each save, which keeps the surface trivial and makes "delete
+# preset" a non-special case.
+
+@csrf_exempt
+@require_http_methods(["GET", "PUT"])
+def presets_collection(request: HttpRequest) -> HttpResponse:
+    if request.method == "GET":
+        return _read_presets()
+    return _write_presets(request)
+
+
+def _read_presets() -> HttpResponse:
+    key = presets_key()
+    if not blob_exists(key):
+        return JsonResponse({"presets": []})
+    try:
+        raw = read_blob(key).decode("utf-8")
+        parsed = json.loads(raw) if raw else []
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        # Corrupted blob — return empty rather than 500 so the editor's
+        # mount-time fetch doesn't break.
+        return JsonResponse({"presets": []})
+    if not isinstance(parsed, list):
+        return JsonResponse({"presets": []})
+    return JsonResponse({"presets": parsed})
+
+
+@require_write_token
+def _write_presets(request: HttpRequest) -> HttpResponse:
+    data = _parse_body(request)
+    if isinstance(data, HttpResponse):
+        return data
+    presets = data.get("presets")
+    if not isinstance(presets, list):
+        return JsonResponse(
+            {"error": "body must be {presets: [...]}"}, status=400
+        )
+    serialized = json.dumps(presets, ensure_ascii=False)
+    write_blob(presets_key(), serialized)
+    return JsonResponse({"presets": presets})

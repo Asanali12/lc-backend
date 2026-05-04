@@ -25,13 +25,16 @@ PythonAnywhere can clone from GitHub. From your local machine:
 
 ```powershell
 cd C:\Users\admin\Desktop\jobEscape\hackathon\lc-backend
-git init
+git init -b main          # initialise with `main` as the default branch
 git add .
 git commit -m "lc-backend initial"
 # create an empty repo on github.com/<you>/lc-backend, then:
-git branch -M main
 git remote add origin https://github.com/<you>/lc-backend.git
 git push -u origin main
+
+# If you forgot `-b main` and `git status` shows you on `master`, rename
+# in place before pushing:
+#   git branch -M main
 ```
 
 `.venv/`, `db.sqlite3`, `.env`, and `storage/` are already in `.gitignore`.
@@ -151,14 +154,31 @@ Click the green **Reload** button in the Web tab. Then from your local
 machine:
 
 ```powershell
+# health check — `curl` in PowerShell is an alias for Invoke-WebRequest,
+# which works fine for a plain GET:
 curl https://<username>.pythonanywhere.com/
 # {"ok": true, "service": "lc-backend"}
 
-# create a page (replace <token>):
-curl -X POST https://<username>.pythonanywhere.com/api/lc-pages/ `
-  -H "Authorization: Bearer <token>" `
-  -H "Content-Type: application/json" `
-  -d '{\"title\":\"hello\",\"html\":\"<h1>Hello</h1>\",\"events\":[]}'
+# create a page. Use Invoke-RestMethod (PowerShell-native) to avoid the
+# alias collision with curl's -X/-H/-d flags:
+$body = @{
+  title  = "hello"
+  html   = "<h1>Hello</h1>"
+  events = @()
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method Post `
+  -Uri "https://<username>.pythonanywhere.com/api/lc-pages/" `
+  -Headers @{ Authorization = "Bearer <token>" } `
+  -ContentType "application/json" `
+  -Body $body
+
+# Or, if you prefer real curl syntax, call curl.exe explicitly to skip
+# the alias:
+#   curl.exe -X POST https://<username>.pythonanywhere.com/api/lc-pages/ `
+#     -H "Authorization: Bearer <token>" `
+#     -H "Content-Type: application/json" `
+#     -d '{\"title\":\"hello\",\"html\":\"<h1>Hello</h1>\",\"events\":[]}'
 ```
 
 You should get back a JSON object with `html_url` and `events_url`. Hit

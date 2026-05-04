@@ -28,6 +28,13 @@ def state_key(page_id: str) -> str:
     return f"{_prefix()}{page_id}/state.json"
 
 
+def presets_key() -> str:
+    """Single global event-presets library shared across every editor user
+    and every saved page. Lives outside the lc-pages prefix because it's
+    not page-scoped."""
+    return "lc-presets/global.json"
+
+
 def blob_exists(key: str) -> bool:
     return default_storage.exists(key)
 
