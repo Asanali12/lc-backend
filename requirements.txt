@@ -1,0 +1,6 @@
+Django==4.2.*
+django-cors-headers==4.*
+django-storages>=1.14
+boto3>=1.28
+python-dotenv>=1.0
+gunicorn>=21.2
